@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>GAWE SOAL YUK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
+
+<div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-xl">
+
+    <h1 class="text-2xl font-bold text-center text-indigo-700 mb-6">
+        🎓 GAWE SOAL YUK
+    </h1>
+
+    <div class="space-y-4">
+
+        <div>
+            <label class="block font-medium">Seed Random</label>
+            <input id="seed" type="number" value="12345"
+                   class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label class="block font-medium">Jumlah Soal (Max 50)</label>
+            <input id="jumlah" type="number" value="20" max="50"
+                   class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label class="block font-medium">Jumlah Paket</label>
+            <select id="paket"
+                    class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
+                <option value="1">1 Paket (A)</option>
+                <option value="2">2 Paket (A-B)</option>
+                <option value="3">3 Paket (A-B-C)</option>
+            </select>
+        </div>
+
+        <button onclick="generateSoal()"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
+            🚀 Generate Paket
+        </button>
+
+        <div id="result" class="mt-4 hidden">
+            <h2 class="font-semibold text-green-600 mb-2">File berhasil dibuat:</h2>
+            <ul id="fileList" class="text-sm text-blue-700 space-y-1"></ul>
+        </div>
+
+    </div>
+
+<!-- Tambahkan ini DI DALAM div utama, sebelum </div> penutup putih -->
+
+<hr class="my-6">
+
+<h2 class="font-semibold">Import Bank Soal (Excel)</h2>
+
+<form id="uploadForm" enctype="multipart/form-data" class="space-x-2">
+  <input type="file" name="file" accept=".xlsx" required>
+  <button type="submit"
+    class="bg-green-600 text-white px-4 py-2 rounded-lg">
+    Upload
+  </button>
+</form>
+</div>
+
+<script>
+
+document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const formData = new FormData(this);
+
+  const response = await fetch("/import", {
+    method: "POST",
+    body: formData
+  });
+
+  const text = await response.text();
+  alert(text);
+});
+
+async function generateSoal() {
+  const seed = parseInt(document.getElementById("seed").value);
+  const jumlah = parseInt(document.getElementById("jumlah").value);
+  const paket = parseInt(document.getElementById("paket").value);
+
+  const response = await fetch("/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seed, jumlah, paket })
+  });
+
+  const data = await response.json();
+
+  if (data.success) {
+    const resultDiv = document.getElementById("result");
+    const fileList = document.getElementById("fileList");
+
+    fileList.innerHTML = "";
+
+    data.files.forEach(file => {
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="/download/${file}" class="hover:underline">${file}</a>`;
+      fileList.appendChild(li);
+    });
+
+    resultDiv.classList.remove("hidden");
+  }
+}
+
+</script>
+</body>
+</html>

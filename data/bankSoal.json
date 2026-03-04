@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "mapel": "IPS",
+    "kelas": "VIII",
+    "tipe": "pg",
+    "soal": "Perubahan sosial dapat terjadi karena faktor internal dan eksternal.",
+    "opsi": [
+      { "text": "Faktor internal seperti pertambahan penduduk", "benar": true },
+      { "text": "Perubahan tidak dipengaruhi teknologi", "benar": false },
+      { "text": "Masyarakat selalu menolak perubahan", "benar": false },
+      { "text": "Perubahan hanya terjadi di kota", "benar": false },
+      { "text": "Semua salah", "benar": false }
+    ],
+    "pembahasan": "Perubahan sosial dipengaruhi faktor internal dan eksternal."
+  }
+]
