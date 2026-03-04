@@ -1,4 +1,8 @@
 const express = require("express");
+const multer = require("multer");
+const XLSX = require("xlsx");
+const path = require("path");
+const fs = require("fs");
 const { generateFile } = require("./engine");
 
 const app = express();
@@ -6,6 +10,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+/* ======== Pastikan folder uploads ada ======== */
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
+/* ======== GENERATE ROUTE ======== */
 app.post("/generate", async (req, res) => {
 
   const { seed, jumlah, paket } = req.body;
@@ -24,13 +34,13 @@ app.post("/generate", async (req, res) => {
   res.json({ success: true, files });
 });
 
-const PORT = process.env.PORT || 3000;
+/* ======== DOWNLOAD ROUTE ======== */
+app.get("/download/:filename", (req, res) => {
+  const filePath = path.join(__dirname, req.params.filename);
+  res.download(filePath);
+});
 
-const multer = require("multer");
-const XLSX = require("xlsx");
-const path = require("path");
-const fs = require("fs");
-
+/* ======== IMPORT EXCEL ROUTE ======== */
 const upload = multer({ dest: "uploads/" });
 
 app.post("/import", upload.single("file"), (req, res) => {
@@ -42,19 +52,15 @@ app.post("/import", upload.single("file"), (req, res) => {
   const workbook = XLSX.readFile(req.file.path);
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
-
   const data = XLSX.utils.sheet_to_json(sheet);
 
-  fs.unlinkSync(req.file.path); // hapus file sementara
+  fs.unlinkSync(req.file.path);
 
   res.send("Upload berhasil. Total baris: " + data.length);
 });
 
-app.get("/download/:filename", (req, res) => {
-  const filePath = path.join(__dirname, req.params.filename);
-  res.download(filePath);
-});
-
+/* ======== START SERVER ======== */
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
