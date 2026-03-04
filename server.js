@@ -10,14 +10,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-/* ======== Pastikan folder uploads ada ======== */
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
-/* ======== GENERATE ROUTE ======== */
+/* ===== GENERATE ===== */
 app.post("/generate", async (req, res) => {
-
   const { seed, jumlah, paket } = req.body;
 
   const paketList = paket === 3 ? ["A","B","C"]
@@ -34,13 +32,13 @@ app.post("/generate", async (req, res) => {
   res.json({ success: true, files });
 });
 
-/* ======== DOWNLOAD ROUTE ======== */
+/* ===== DOWNLOAD ===== */
 app.get("/download/:filename", (req, res) => {
   const filePath = path.join(__dirname, req.params.filename);
   res.download(filePath);
 });
 
-/* ======== IMPORT EXCEL ROUTE ======== */
+/* ===== IMPORT ===== */
 const upload = multer({ dest: "uploads/" });
 
 app.post("/import", upload.single("file"), (req, res) => {
@@ -59,7 +57,6 @@ app.post("/import", upload.single("file"), (req, res) => {
   res.send("Upload berhasil. Total baris: " + data.length);
 });
 
-/* ======== START SERVER ======== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
