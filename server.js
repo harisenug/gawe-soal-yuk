@@ -32,9 +32,8 @@ app.post("/generate", async (req, res) => {
   res.json({ success: true, files });
 });
 
-/* ===== DOWNLOAD ===== */
 app.get("/download/:filename", (req, res) => {
-  const filePath = path.join(__dirname, req.params.filename);
+  const filePath = path.join(__dirname, "public", req.params.filename);
 
   if (fs.existsSync(filePath)) {
     res.download(filePath);
