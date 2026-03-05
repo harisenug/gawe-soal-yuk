@@ -35,7 +35,12 @@ app.post("/generate", async (req, res) => {
 /* ===== DOWNLOAD ===== */
 app.get("/download/:filename", (req, res) => {
   const filePath = path.join(__dirname, req.params.filename);
-  res.download(filePath);
+
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    res.status(404).send("File tidak ditemukan");
+  }
 });
 
 /* ===== IMPORT ===== */
@@ -58,6 +63,7 @@ app.post("/import", upload.single("file"), (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
