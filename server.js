@@ -217,12 +217,6 @@ res.json(preview);
 
 });
 
-
-/* == GENERATOr SOAL  === */
-app.get("/generator",(req,res)=>{
-res.sendFile(path.join(__dirname,"public","generator.html"));
-});
-
 /* ================= PREVIEW ================= */
 
 app.post("/preview",(req,res)=>{
@@ -254,17 +248,27 @@ res.json(shuffled.slice(0,jumlah));
 
 });
 
+/* == GENERATOr SOAL  === */
+
+app.get("/generator",(req,res)=>{
+res.sendFile(__dirname + "/public/generator.html");
 });
 
 /* ================= START ================= */
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+console.log("Server running on port " + PORT);
+});
+
 /*
-app.listen(3000,()=>{
-console.log("Server running http://localhost:3000");
-*/
+app.get("/generator",(req,res)=>{
+res.sendFile(path.join(__dirname,"public","generator.html"));
+});
+
+/*
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT,()=>{
 console.log("Server running on port "+PORT);
-});
-
-});
+}); */
