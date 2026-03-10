@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Preview Paket Soal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+
+<div class="max-w-4xl mx-auto">
+
+<h1 class="text-2xl font-bold mb-6">Preview Paket Soal</h1>
+
+<div class="flex gap-2 mb-4">
+
+<input id="jumlah" type="number" placeholder="Jumlah soal"
+class="border p-2 rounded">
+
+<input id="mapel" placeholder="Mapel"
+class="border p-2 rounded">
+
+<button onclick="preview()"
+class="bg-blue-600 text-white px-4 rounded">
+Preview
+</button>
+
+</div>
+
+<div id="soalList" class="space-y-6"></div>
+
+</div>
+
+<script>
+
+async function preview(){
+
+const jumlah = document.getElementById("jumlah").value;
+const mapel = document.getElementById("mapel").value;
+
+const res = await fetch("/preview",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({jumlah,mapel})
+});
+
+const data = await res.json();
+
+const list = document.getElementById("soalList");
+list.innerHTML="";
+
+data.forEach((s,i)=>{
+
+let opsiHTML="";
+
+try{
+const d = JSON.parse(s.data);
+
+if(d.opsi){
+
+d.opsi.forEach((o,j)=>{
+
+const huruf=["A","B","C","D","E"];
+
+opsiHTML+=`
+<div>${huruf[j]}. ${o.text}</div>
+`;
+
+});
+
+}
+
+}catch{}
+
+list.innerHTML+=`
+
+<div class="bg-white p-4 rounded shadow">
+
+<div class="font-bold mb-2">
+${i+1}. ${s.soal}
+</div>
+
+<div class="ml-4 text-gray-700">
+${opsiHTML}
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

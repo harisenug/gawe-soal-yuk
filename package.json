@@ -14,7 +14,16 @@
   "dependencies": {
     "docx": "^9.6.0",
     "express": "^5.2.1",
-    "multer": "^2.1.0",
+    "multer": "^2.1.1",
+    "sqlite3": "^5.1.7",
     "xlsx": "^0.18.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harisenug/gawe-soal-yuk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/harisenug/gawe-soal-yuk/issues"
+  },
+  "homepage": "https://github.com/harisenug/gawe-soal-yuk#readme"
 }

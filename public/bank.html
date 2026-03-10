@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bank Soal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+
+<div class="max-w-4xl mx-auto">
+
+<h1 class="text-2xl font-bold mb-6">Bank Soal</h1>
+
+<div class="flex gap-2 mb-4">
+
+<input id="search"
+placeholder="Cari soal..."
+class="border p-2 flex-1 rounded"/>
+
+<button onclick="loadSoal()"
+class="bg-blue-600 text-white px-4 rounded">
+Cari
+</button>
+
+</div>
+
+<div id="list" class="space-y-6"></div>
+
+</div>
+
+<script>
+
+let semuaSoal=[];
+
+async function loadSoal(){
+
+const res=await fetch("/soal");
+semuaSoal=await res.json();
+
+render();
+
+}
+
+function render(){
+
+const keyword=document.getElementById("search").value.toLowerCase();
+
+const list=document.getElementById("list");
+
+list.innerHTML="";
+
+semuaSoal
+.filter(s=>!keyword || s.soal.toLowerCase().includes(keyword))
+.forEach(s=>{
+
+let data={};
+
+try{
+data=s.data ? JSON.parse(s.data) : {};
+}catch{}
+
+let opsiHTML="";
+
+if(data.opsi){
+
+data.opsi.forEach((o,i)=>{
+
+const huruf=["A","B","C","D","E"];
+
+opsiHTML+=`
+<div>
+${huruf[i]}. ${o.text}
+</div>
+`;
+
+});
+
+}
+
+list.innerHTML+=`
+
+<div class="bg-white p-4 rounded shadow">
+
+<div class="font-semibold mb-2">
+${s.soal}
+</div>
+
+<div class="ml-4 text-gray-700 mb-2">
+${opsiHTML}
+</div>
+
+<div class="text-sm text-gray-500">
+Mapel: ${s.mapel || "-"} |
+Level: ${s.level || "-"}
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+loadSoal();
+
+</script>
+
+</body>
+</html>

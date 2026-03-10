@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Generator Soal</title>
+<link rel="stylesheet" href="generator.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📚 GAWE SOAL YUK</h1>
+
+<div class="grid">
+
+<div>
+<label>Tingkatan</label>
+<select id="tingkat"></select>
+</div>
+
+<div>
+<label>Kelas</label>
+<select id="kelas"></select>
+</div>
+
+<div>
+<label>Fase</label>
+<input id="fase" readonly>
+</div>
+
+<div>
+<label>Mapel</label>
+<input id="mapel">
+</div>
+
+<div>
+<label>Materi</label>
+<input id="materi">
+</div>
+
+<div>
+<label>Sub Materi</label>
+<input id="submateri">
+</div>
+
+</div>
+
+<h2>SOAL</h2>
+
+<div class="soalHeader">
+
+<div>Tipe Soal</div>
+<div>Level</div>
+<div>Kesulitan</div>
+<div>Jumlah</div>
+<div>Gambar</div>
+<div>Tabel</div>
+<div>Hapus</div>
+
+</div>
+
+<div id="tipeContainer"></div>
+
+<button class="addBtn" id="addType">TAMBAH TIPE SOAL</button>
+
+<br>
+
+<button class="actionBtn" id="previewBtn">PREVIEW</button>
+<button class="actionBtn" id="generateBtn">EXPORT WORD</button>
+
+</div>
+
+<script src="generator.js"></script>
+
+</body>
+</html>

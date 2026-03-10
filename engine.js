@@ -1,245 +1,295 @@
 const {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  TabStopType,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  AlignmentType,
-  BorderStyle
+Document,
+Packer,
+Paragraph,
+TextRun,
+TabStopType,
+AlignmentType
 } = require("docx");
 
 const fs = require("fs");
-const path = require("path");
+const sqlite3 = require("sqlite3").verbose();
+
+const db = new sqlite3.Database("database.db");
 
 const CM075 = 425;
 const CM15 = 850;
 const LINE = 240;
-
 const MAX_SOAL = 50;
 
-function seededRandom(seed) {
-  let x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
+/* ================= RANDOM ================= */
+
+function seededRandom(seed){
+let x = Math.sin(seed++) * 10000;
+return x - Math.floor(x);
 }
 
-function shuffleWithSeed(array, seed) {
-  let arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(seededRandom(seed + i) * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+function shuffleWithSeed(array, seed){
+
+let arr = [...array];
+
+for(let i = arr.length - 1; i > 0; i--){
+
+const j = Math.floor(seededRandom(seed + i) * (i + 1));
+
+[arr[i],arr[j]]=[arr[j],arr[i]];
+
 }
 
-function loadBankSoal() {
-  const raw = fs.readFileSync("./data/bankSoal.json");
-  return JSON.parse(raw);
+return arr;
+
 }
 
-async function generateFile(paket, mode, seed, jumlahSoal) {
+/*=== GENERATOR BLUEPRINT === */
+function shuffle(arr, seed){
 
-  jumlahSoal = Math.min(jumlahSoal, MAX_SOAL);
+let random = require("seedrandom")(seed);
 
-  const bank = loadBankSoal();
-  const seedFinal = seed + paket.charCodeAt(0);
+for(let i=arr.length-1;i>0;i--){
 
-  const soalTerpilih = shuffleWithSeed(bank, seedFinal)
-    .slice(0, jumlahSoal);
+let j=Math.floor(random()* (i+1));
 
-  const children = [];
-  const daftarKunci = [];
+[arr[i],arr[j]]=[arr[j],arr[i]];
 
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [ new TextRun({ text: `PAKET ${paket}`, bold: true, size: 24 }) ]
-    })
-  );
+}
 
-  children.push(new Paragraph({}));
+return arr;
 
-  let nomor = 1;
+}
 
-  for (let item of soalTerpilih) {
+/* ===== AMBIL SOAL ====*/
+function ambilSoal(bank, rule){
 
-    // ================= PG =================
-    if (item.tipe === "pg") {
+return bank.filter(s=>{
 
-      children.push(
-        new Paragraph({
-          tabStops: [{ type: TabStopType.LEFT, position: CM075 }],
-          indent: { left: CM075, hanging: CM075 },
-          children: [
-            new TextRun(`${nomor}.`),
-            new TextRun("\t"),
-            new TextRun(item.soal)
-          ],
-          spacing: { line: LINE }
-        })
-      );
+if(rule.tipe && s.tipe!==rule.tipe) return false;
 
-      const opsiAcak = shuffleWithSeed(item.opsi, seedFinal + nomor);
-      const huruf = ["A","B","C","D","E"];
-      let kunci = "";
+if(rule.level && s.level!==rule.level) return false;
 
-      opsiAcak.forEach((o, i) => {
-        if (o.benar) kunci = huruf[i];
+if(rule.kesulitan && s.level_kesulitan!==rule.kesulitan) return false;
 
-        children.push(
-          new Paragraph({
-            tabStops: [{ type: TabStopType.LEFT, position: CM15 }],
-            indent: { left: CM15, hanging: CM075 },
-            children: [
-              new TextRun(`${huruf[i]}.`),
-              new TextRun("\t"),
-              new TextRun(o.text)
-            ],
-            spacing: { line: LINE }
-          })
-        );
-      });
+if(rule.gambar && !s.gambar) return false;
 
-      daftarKunci.push({ nomor, kunci, pembahasan: item.pembahasan });
-    }
+if(rule.tabel && !s.tabel) return false;
 
-    // ================= MENJODOHKAN =================
-    if (item.tipe === "menjodohkan") {
+return true;
 
-      children.push(
-        new Paragraph({
-          tabStops: [{ type: TabStopType.LEFT, position: CM075 }],
-          indent: { left: CM075, hanging: CM075 },
-          children: [
-            new TextRun(`${nomor}.`),
-            new TextRun("\t"),
-            new TextRun(item.soal)
-          ],
-          spacing: { line: LINE }
-        })
-      );
+});
 
-      children.push(new Paragraph({}));
+}
 
-      const rows = [];
+/*=== GENERATOR PAKET SOAL ANTI DUPLIKASI ====*/
+function generatePaket(bank, blueprint, paketTotal, seed){
 
-      rows.push(
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph("Kolom A")] }),
-            new TableCell({ children: [new Paragraph("Kolom B")] })
-          ]
-        })
-      );
+let usedSoal = new Set();
 
-      const max = Math.max(item.kolomA.length, item.kolomB.length);
+let hasil=[];
 
-      for (let i = 0; i < max; i++) {
-        rows.push(
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [ new Paragraph(item.kolomA[i] || "") ]
-              }),
-              new TableCell({
-                children: [ new Paragraph(item.kolomB[i] || "") ]
-              })
-            ]
-          })
-        );
-      }
+for(let p=0;p<paketTotal;p++){
 
-      children.push(
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows
-        })
-      );
+let paket=[];
 
-      daftarKunci.push({
-        nomor,
-        kunciMenjodohkan: item.kunci,
-        pembahasan: item.pembahasan
-      });
-    }
+blueprint.forEach(rule=>{
 
-    children.push(new Paragraph({}));
-    nomor++;
-  }
+let kandidat = ambilSoal(bank, rule);
 
-  // ================= MODE GURU =================
-  if (mode === "guru") {
+kandidat = kandidat.filter(s=>!usedSoal.has(s.id));
 
-    children.push(
-      new Paragraph({
-        children: [ new TextRun({ text: "KUNCI DAN PEMBAHASAN", bold: true }) ]
-      })
-    );
+kandidat = shuffle(kandidat, seed+p);
 
-    children.push(new Paragraph({}));
+let ambil = kandidat.slice(0,rule.jumlah);
 
-    daftarKunci.forEach(k => {
+ambil.forEach(s=>usedSoal.add(s.id));
 
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: `Nomor ${k.nomor}`, bold: true })
-          ]
-        })
-      );
+paket.push(...ambil);
 
-      if (k.kunci) {
-        children.push(new Paragraph(`Kunci: ${k.kunci}`));
-      }
+});
 
-      if (k.kunciMenjodohkan) {
+paket = shuffle(paket, seed+p);
 
-        const rows = [
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph("Nomor")] }),
-              new TableCell({ children: [new Paragraph("Jawaban")] })
-            ]
-          })
-        ];
+hasil.push(paket);
 
-        Object.entries(k.kunciMenjodohkan).forEach(([no, jw]) => {
-          rows.push(
-            new TableRow({
-              children: [
-                new TableCell({ children: [new Paragraph(no)] }),
-                new TableCell({ children: [new Paragraph(jw)] })
-              ]
-            })
-          );
-        });
+}
 
-        children.push(
-          new Table({
-            width: { size: 50, type: WidthType.PERCENTAGE },
-            rows
-          })
-        );
-      }
+return hasil;
 
-      children.push(new Paragraph(`Pembahasan: ${k.pembahasan}`));
-      children.push(new Paragraph({}));
-    });
-  }
+}
 
-  const doc = new Document({
-    sections: [{ children }]
-  });
+/* ================= LOAD BANK ================= */
 
-  const buffer = await Packer.toBuffer(doc);
+function loadBankSoal(){
 
-  const fileName = `PAKET-${paket}-${mode}.docx`;
-  fs.writeFileSync(`./public/${fileName}`, buffer);
+return new Promise((resolve,reject)=>{
 
-  return fileName;
+db.all("SELECT * FROM soal",[],(err,rows)=>{
+
+if(err) return reject(err);
+
+const data = rows.map(r=>{
+
+let parsed={};
+
+try{
+parsed = r.data ? JSON.parse(r.data) : {};
+}catch{
+parsed={};
+}
+
+return {...r,...parsed};
+
+});
+
+resolve(data);
+
+});
+
+});
+
+}
+
+/* ================= GENERATE FILE ================= */
+
+async function generateFile(paket,mode,seed,jumlah,mapel,level){
+
+jumlah = Math.min(jumlah || 20,MAX_SOAL);
+
+let bank = await loadBankSoal();
+
+if(!bank.length){
+throw new Error("Bank soal kosong");
+}
+
+/* FILTER */
+
+if(mapel){
+bank = bank.filter(s=>!s.mapel || s.mapel===mapel);
+}
+
+if(level){
+bank = bank.filter(s=>!s.level || s.level===level);
+}
+
+if(!bank.length){
+throw new Error("Tidak ada soal sesuai filter");
+}
+
+const seedFinal = seed + paket.charCodeAt(0);
+
+const soalTerpilih =
+shuffleWithSeed(bank,seedFinal).slice(0,jumlah);
+
+const children=[];
+const daftarKunci=[];
+
+children.push(
+new Paragraph({
+alignment:AlignmentType.CENTER,
+children:[
+new TextRun({
+text:`PAKET ${paket}`,
+bold:true,
+size:32
+})
+]
+})
+);
+
+children.push(new Paragraph(""));
+
+let nomor=1;
+
+for(let item of soalTerpilih){
+
+if(item.tipe==="pg"){
+
+children.push(
+new Paragraph({
+tabStops:[{type:TabStopType.LEFT,position:CM075}],
+indent:{left:CM075,hanging:CM075},
+children:[
+new TextRun(`${nomor}.`),
+new TextRun("\t"),
+new TextRun(item.soal)
+],
+spacing:{line:LINE}
+})
+);
+
+const opsiAcak =
+shuffleWithSeed(item.opsi||[],seedFinal+nomor);
+
+const huruf=["A","B","C","D","E"];
+let kunci="";
+
+opsiAcak.forEach((o,i)=>{
+
+if(o.benar) kunci=huruf[i];
+
+children.push(
+new Paragraph({
+tabStops:[{type:TabStopType.LEFT,position:CM15}],
+indent:{left:CM15,hanging:CM075},
+children:[
+new TextRun(`${huruf[i]}.`),
+new TextRun("\t"),
+new TextRun(o.text)
+],
+spacing:{line:LINE}
+})
+);
+
+});
+
+daftarKunci.push({nomor,kunci,pembahasan:item.pembahasan});
+
+}
+
+children.push(new Paragraph(""));
+nomor++;
+
+}
+
+/* ===== MODE GURU ===== */
+
+if(mode==="guru"){
+
+children.push(new Paragraph(""));
+children.push(new Paragraph("KUNCI JAWABAN"));
+
+daftarKunci.forEach(k=>{
+
+children.push(
+new Paragraph(`Nomor ${k.nomor} : ${k.kunci}`)
+);
+
+if(k.pembahasan){
+
+children.push(
+new Paragraph(`Pembahasan: ${k.pembahasan}`)
+);
+
+}
+
+});
+
+}
+
+const doc = new Document({
+sections:[{children}]
+});
+
+const buffer = await Packer.toBuffer(doc);
+
+if(!fs.existsSync("./public")){
+fs.mkdirSync("./public");
+}
+
+const fileName=`PAKET-${paket}-${mode}.docx`;
+
+fs.writeFileSync(`./public/${fileName}`,buffer);
+
+return fileName;
+
 }
 
 module.exports = { generateFile };

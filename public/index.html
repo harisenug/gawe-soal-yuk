@@ -1,122 +1,90 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>GAWE SOAL YUK</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<title>GAWE SOAL YUK</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 p-10">
 
-<div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-xl">
+<div class="bg-white p-6 rounded shadow max-w-xl mx-auto">
 
-    <h1 class="text-2xl font-bold text-center text-indigo-700 mb-6">
-        🎓 GAWE SOAL YUK
-    </h1>
+<h1 class="text-2xl font-bold mb-4">Generator Paket Soal</h1>
 
-    <div class="space-y-4">
+<div class="space-y-3">
 
-        <!-- Seed -->
-        <div>
-            <label class="block font-medium">Seed Random</label>
-            <input id="seed" type="number" value="12345"
-                   class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
-        </div>
+<input id="seed" type="number" value="12345" class="border p-2 w-full">
 
-        <!-- Jumlah Soal -->
-        <div>
-            <label class="block font-medium">Jumlah Soal (Max 50)</label>
-            <input id="jumlah" type="number" value="20" max="50"
-                   class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
-        </div>
+<input id="jumlah" type="number" value="20" class="border p-2 w-full">
 
-        <!-- Jumlah Paket -->
-        <div>
-            <label class="block font-medium">Jumlah Paket</label>
-            <select id="paket"
-                    class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400">
-                <option value="1">1 Paket (A)</option>
-                <option value="2">2 Paket (A-B)</option>
-                <option value="3">3 Paket (A-B-C)</option>
-            </select>
-        </div>
+<select id="paket" class="border p-2 w-full">
+<option value="1">1 Paket</option>
+<option value="2">2 Paket</option>
+<option value="3">3 Paket</option>
+</select>
 
-        <!-- Generate -->
-        <button onclick="generateSoal()"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
-            🚀 Generate Paket
-        </button>
+<button onclick="generate()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+Generate Soal
+</button>
 
-        <!-- Result -->
-        <div id="result" class="mt-4 hidden">
-            <h2 class="font-semibold text-green-600 mb-2">File berhasil dibuat:</h2>
-            <ul id="fileList" class="text-sm text-blue-700 space-y-1"></ul>
-        </div>
+<hr>
 
-        <!-- Import Excel -->
-        <hr class="my-6">
+<form id="uploadForm">
+<input type="file" name="file" required class="border p-2 w-full">
+<button class="bg-green-600 text-white px-4 py-2 rounded w-full mt-2">
+Upload Excel
+</button>
+</form>
 
-        <h2 class="font-semibold">Import Bank Soal (Excel)</h2>
+</div>
 
-        <form id="uploadForm" enctype="multipart/form-data" class="flex gap-2 items-center">
-            <input type="file" name="file" accept=".xlsx"
-                   class="flex-1 border p-2 rounded-lg" required>
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                Upload
-            </button>
-        </form>
+<div id="result" class="mt-4"></div>
 
-    </div>
 </div>
 
 <script>
 
-document.getElementById("uploadForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
+document.getElementById("uploadForm").addEventListener("submit",async e=>{
 
-    const formData = new FormData(this);
+e.preventDefault();
 
-    const response = await fetch("/import", {
-        method: "POST",
-        body: formData
-    });
+const formData=new FormData(e.target);
 
-    const text = await response.text();
-    alert(text);
+const res=await fetch("/import-excel",{method:"POST",body:formData});
+
+const text=await res.text();
+
+alert(text);
+
 });
 
-async function generateSoal() {
+async function generate(){
 
-    const seed = parseInt(document.getElementById("seed").value);
-    const jumlah = parseInt(document.getElementById("jumlah").value);
-    const paket = parseInt(document.getElementById("paket").value);
+const seed = parseInt(document.getElementById("seed").value);
+const jumlah = parseInt(document.getElementById("jumlah").value);
+const paket = parseInt(document.getElementById("paket").value);
 
-    const response = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seed, jumlah, paket })
-    });
+const res = await fetch("/generate",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({seed,jumlah,paket})
+});
 
-    const data = await response.json();
+const data = await res.json();
 
-    if (data.success) {
+const div = document.getElementById("result");
 
-        const resultDiv = document.getElementById("result");
-        const fileList = document.getElementById("fileList");
+div.innerHTML="";
 
-        fileList.innerHTML = "";
+if(!data.success){
+alert("Generate gagal");
+return;
+}
 
-        data.files.forEach(file => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="/download/${file}" class="hover:underline">${file}</a>`;
-            fileList.appendChild(li);
-        });
+data.files.forEach(f=>{
+div.innerHTML += `<a href="/download/${f}" class="block text-blue-600">${f}</a>`;
+});
 
-        resultDiv.classList.remove("hidden");
-    } else {
-        alert("Terjadi kesalahan saat generate.");
-    }
 }
 
 </script>

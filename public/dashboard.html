@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Bank Soal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+
+<div class="max-w-4xl mx-auto">
+
+<h1 class="text-2xl font-bold mb-6">Dashboard Bank Soal</h1>
+
+<div id="total" class="mb-6 text-lg font-semibold"></div>
+
+<div id="stats" class="space-y-4"></div>
+
+</div>
+
+<script>
+
+async function loadStats(){
+
+const res = await fetch("/stats");
+const data = await res.json();
+
+let total = 0;
+let map = {};
+
+data.forEach(r=>{
+
+total += r.jumlah;
+
+if(!map[r.mapel]){
+map[r.mapel] = {};
+}
+
+map[r.mapel][r.level] = r.jumlah;
+
+});
+
+document.getElementById("total").innerText =
+"Total Soal : " + total;
+
+const statsDiv = document.getElementById("stats");
+
+statsDiv.innerHTML = "";
+
+for(let m in map){
+
+let html = `
+<div class="bg-white p-4 rounded shadow">
+<div class="font-bold mb-2">${m || "Tanpa Mapel"}</div>
+`;
+
+for(let l in map[m]){
+html += `<div>${l} : ${map[m][l]}</div>`;
+}
+
+html += "</div>";
+
+statsDiv.innerHTML += html;
+
+}
+
+}
+
+loadStats();
+
+</script>
+
+</body>
+</html>
